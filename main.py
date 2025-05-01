@@ -1,74 +1,113 @@
-# A simple example to show how to use the agency
+"""
+VM.forward(time)
+VM.backward(time)
+VM.stop()
+VM.start()
+"""
+
 
 from zhipuai import ZhipuAI
-from agency import Agency
-    
+import time
+import speech_recognition as sr
+import time
 import os
-import tempfile
-import subprocess
 
 messages = []
 
-def add_message(role, content):
-    messages.append({"role": role, "content": content})
+def addMessage(role, content):
+    messages.append({
+        "role": role,
+        "content": content
+    })
 
-def get_response():
-    client = ZhipuAI(api_key='4d050a2bb0eaf43c93b1f205acc3df5d.dW1Oa7aLqq1MgTm4')
+def getResponse():
+    client = ZhipuAI(api_key="4d050a2bb0eaf43c93b1f205acc3df5d.dW1Oa7aLqq1MgTm4")
     response = client.chat.completions.create(
-        model="glm-4",
-        messages=messages,
-        temperature=0
+        model="glm-4v-plus-0111",
+        messages=messages
     )
+    addMessage("assistant", [{
+        "type": "text",
+        "text": response.choices[0].message.content
+    }])
     return response.choices[0].message.content
 
+addMessage("system", [
+    {
+        "type": "text",
+        "text": """You are an AI Pet that can talk and move
 
-def run(code):
-    code = code[0]
-    try:
-        # Create a temporary file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as temp_file:
-            # Wrap the code to capture its result
-            wrapped_code = f"""
-import random
-result = eval('''{code}''')
-print(result)
+General Guideline:
+- Reply with a dialog you want to say(possibly be empty), and a list instructions about how you move. first write dialog as what you want to say(without any prefix), try talk more, but don't be annoying. 
+- And then write instructions, add a INSTRUCTION: before the instructions, you can't have instructions between dialogues
+
+Instruction Set (things wrapped in {} is parameter, replace them with actual number when using them):
+FORWARD {time in second}
+BACKWARD {time in second}
+TURN {0/1, 0 as left, 1 as right} {time in second}
 """
-            temp_file.write(wrapped_code)
-            temp_file_path = temp_file.name
+    }
+])
+addMessage("user", [
+    {
+        "type": "text",
+        "text": """
+Hey! Move back!
+"""
+    }
+])
+st = time.time()
+# print(getResponse())
+ed = time.time()
+# print(ed - st)
 
-        # Run the temporary file and capture the output
-        result = subprocess.check_output(['python', temp_file_path], stderr=subprocess.STDOUT, universal_newlines=True)
+def record_and_transcribe(silence_duration=2, energy_threshold=400, dynamic_energy_threshold=True):
+    """
+    录制语音并在静音时自动停止，然后转文字
+    
+    参数:
+        silence_duration (int): 静音多少秒后停止录音(默认2秒)
+        energy_threshold (int): 静音能量阈值(默认400)
+        dynamic_energy_threshold (bool): 是否动态调整能量阈值(默认True)
+    """
+    
+    # 初始化识别器
+    r = sr.Recognizer()
+    r.energy_threshold = energy_threshold
+    r.dynamic_energy_threshold = dynamic_energy_threshold
+    r.pause_threshold = silence_duration
+    
+    with sr.Microphone() as source:
+        print("请开始说话...")
+        
+        # 调整环境噪音
+        r.adjust_for_ambient_noise(source, duration=1)
+        
+        try:
+            # 监听麦克风
+            audio = r.listen(source)
+            print("录音结束，正在识别...")
+            
+            try:
+                # 使用Google Web Speech API进行识别
+                text = r.recognize_bing(audio, language='zh-CN')
+                print("识别结果: " + text)
+                return text
+                
+            except sr.UnknownValueError:
+                print("无法识别语音")
+                return None
+                
+            except sr.RequestError as e:
+                print(f"请求错误; {e}")
+                return None
+                
+        except KeyboardInterrupt:
+            print("用户中断")
+            return None
 
-        # Return the result
-        return result.strip()
-
-    except subprocess.CalledProcessError as e:
-        return f"Error: {e.output.strip()}"
-    except Exception as e:
-        return f"Error: {str(e)}"
-    finally:
-        # Delete the temporary file
-        if 'temp_file_path' in locals():
-            os.remove(temp_file_path)
-
-info = {"name": "Jack", "age": 20, "problem": "headache"}
-def getInfo(code):
-    if not (code in info):
-        return "No information found"
-    return info[code]
-
-num = 71
-def guess(numGuessed):
-    if numGuessed > num:
-        return "Too Big"
-    elif numGuessed < num:
-        return "Too Small"
-    else:
-        return "You Get it!"
-
-agent = Agency(get_response_fn=get_response, add_message=add_message, PROMPT="Guess a number between 1 and 100, call function to check")
-# agent.add_agent("run", "1", "run code and return the result, the only module imported is random", run)
-# agent.add_agent("getInfo", "1", "get the information of the user, the only thing you can pass in is either name, age or problem", getInfo)
-agent.add_agent("guess", "1", "guess a number and it'll tell you it's correct, too big or too small, pass the parameter as a number", guess)
-response = agent.get_response("Hello")
-print(response)
+if __name__ == "__main__":
+    # 示例使用
+    result = record_and_transcribe()
+    if result:
+        print("最终转录结果:", result)

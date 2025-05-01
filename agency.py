@@ -39,4 +39,4 @@ class Agency:
         # print(res)
         preCall += f"\n{call}\n"
         res = f"RESULT: {res}"
-        return f"{preCall}{res}\n" + self.get_response_new(res)
+        return f"{preCall}{res}\n" + self.get_response(res)
