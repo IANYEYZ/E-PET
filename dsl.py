@@ -78,7 +78,7 @@ def run_instructions():
                 sleep(instruction.args[0])
                 wheel.stop()
         else:
-            logging.debug("Instruction queue is empty, sleeping...")
+            # logging.debug("Instruction queue is empty, sleeping...")
             sleep(0.1)
 
 def start():
