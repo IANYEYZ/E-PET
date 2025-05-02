@@ -9,7 +9,7 @@ from queue import Queue
 import threading
 import sounddevice as sd
 import numpy as np
-import soundfile as sf
+import soundfile as sf # type: ignore
 # from helpers.camera import camera
 from helpers.mic import MIC
 from dashscope import MultiModalConversation
