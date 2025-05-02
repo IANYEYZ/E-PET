@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with E-PET.  If not, see <https://www.gnu.org/licenses/>.
 
-from servo import SERVO
+from helpers.servo import SERVO
 
 class ARM(SERVO):
     _PIN_LEFT = 14

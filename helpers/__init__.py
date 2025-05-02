@@ -15,12 +15,3 @@
 # You should have received a copy of the GNU General Public License
 # along with E-PET.  If not, see <https://www.gnu.org/licenses/>.
 
-from adafruit_servokit import ServoKit  # type: ignore
-
-
-class SERVO:
-    def __init__(self):
-        self._kit = ServoKit(channels=16)
-
-    def _set_servo(self, pin, mode):
-        self._kit.continuous_servo[pin].throttle = mode
