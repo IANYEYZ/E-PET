@@ -3,17 +3,18 @@ import time
 import os
 import base64
 import concurrent.futures
-from dsl import start, run, STRAIGHT, RIGHT, LEFT, ROTATE_CLOCKWISE, ROTATE_COUNTERCLOCKWISE, Instruction, BACK, stop
-# from ddsl import camera
+from ddsl import start, run, STRAIGHT, RIGHT, LEFT, ROTATE_CLOCKWISE, ROTATE_COUNTERCLOCKWISE, Instruction, BACK, stop
+from ddsl import camera
 from queue import Queue
 import threading
 import sounddevice as sd
 import numpy as np
 import soundfile as sf # type: ignore
-from helpers.camera import camera
+# from helpers.camera import camera
 from helpers.mic import MIC
 from dashscope import MultiModalConversation
 import dashscope
+import pyaudio
 
 mic = MIC()
 dashscope.api_key = "sk-64b475070dbd4755a53ea2d0368c3ec2"
@@ -66,8 +67,58 @@ class AI:
             self.addMessage("assistant", message)
             yield message
 
+class AIMULTI:
+    def __init__(self):
+        # 使用Qwen的API，这里假设使用OpenAI兼容的API格式
+        self.client = OpenAI(
+            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",  # 通义千问的API地址
+            api_key="sk-64b475070dbd4755a53ea2d0368c3ec2"  # 替换为你的API key
+        )
+        self.messages = []
+    
+    def addMessage(self, role, content):
+        self.messages.append({
+            "role": role,
+            "content": content
+        })
+    
+    def getResponseNew(self):
+        response = self.client.chat.completions.create(
+            model="qwen-omni-turbo",
+            messages=self.messages,
+            # 设置输出数据的模态，当前支持两种：["text","audio"]、["text"]
+            modalities=["text", "audio"],
+            audio={"voice": "Ethan", "format": "wav"},
+            # stream 必须设置为 True，否则会报错
+            stream=True,
+            stream_options={"include_usage": True},
+        )
+        p = pyaudio.PyAudio()
+        # 创建音频流
+        stream = p.open(format=pyaudio.paInt16,
+                        channels=1,
+                        rate=24000,
+                        output=True)
+        message = ""
+        for chunk in response:
+            if chunk.choices:
+                if hasattr(chunk.choices[0].delta, "audio"):
+                    try:
+                        audio_string = chunk.choices[0].delta.audio["data"]
+                        wav_bytes = base64.b64decode(audio_string)
+                        audio_np = np.frombuffer(wav_bytes, dtype=np.int16)
+                        # 直接播放音频数据
+                        stream.write(audio_np.tobytes())
+                    except Exception as e:
+                        message += chunk.choices[0].delta.audio["transcript"]
+                        # print(chunk.choices[0].delta.audio["transcript"])
+                    # print(chunk.choices[0])
+        print("message:", message)
+        self.addMessage("assistant", message)
+
+
 AIMove = AI()
-AITalk = AI()
+AITalk = AIMULTI()
 AITRANS = AI()
 
 # 系统提示词保持不变，因为任务逻辑相同
@@ -111,6 +162,8 @@ FORWARD 1
 TURN 1 2
 
 记住，严格按照指令格式输出，不要添加包括但不限于解释等的任何其他内容，只输出指令
+                   
+指令翻译要精准，一定要遵循给你的计划来翻译，不能自己擅自更改
 """)
 
 AITalk.addMessage("system", """You are an AI Pet that can talk
@@ -121,6 +174,8 @@ General Guideline:
 """)
 
 def toIns(string):
+    if string == "":
+        return Instruction(STRAIGHT, [0])
     res = string.split(" ")
     if res[0] == "FORWARD":
         return Instruction(STRAIGHT, [float(res[1])])
@@ -177,6 +232,8 @@ def AIMOVEINS():
         lst = ""
     
     AITRANS.messages.pop()
+    AITRANS.messages.pop()
+    # print(AITRANS.messages)
 
 def AITALK():
     AITalk.getResponseNew()
@@ -221,4 +278,5 @@ while True:
 
     pool = concurrent.futures.ThreadPoolExecutor(max_workers=2)
     pool.submit(AIMOVEINS)
+    pool.submit(AITALK)
     pool.shutdown(wait=True)
