@@ -18,12 +18,43 @@
 from helpers.servo import SERVO
 
 class ARM(SERVO):
+    _STOP = 0
+    _FORWARD = 1
+    _BACKWARD = 2
+
     _PIN_LEFT = 14
     _PIN_RIGHT = 15
+
+    _SPEED = {
+        _PIN_LEFT: {
+            _STOP: 0.2,
+            _FORWARD: 1,
+            _BACKWARD: -1,
+        },
+        _PIN_RIGHT: {
+            _STOP: 0.2,
+            _FORWARD: 1,
+            _BACKWARD: -1,
+        },
+    }
 
     def __init__(self):
         super().__init__()
 
-    def _set_all_servo(self, mode):
-        self._set_servo(self._PIN_LEFT, mode[0])
-        self._set_servo(self._PIN_RIGHT, mode[1])
+    def left_clockwise(self):
+        self._set_servo(self._PIN_LEFT, self._SPEED[self._PIN_LEFT][self._FORWARD])
+
+    def left_counter_clockwise(self):
+        self._set_servo(self._PIN_LEFT, self._SPEED[self._PIN_LEFT][self._BACKWARD])
+
+    def left_stop(self):
+        self._set_servo(self._PIN_LEFT, self._SPEED[self._PIN_LEFT][self._STOP])
+
+    def right_clockwise(self):
+        self._set_servo(self._PIN_RIGHT, self._SPEED[self._PIN_RIGHT][self._FORWARD])
+
+    def right_counter_clockwise(self):
+        self._set_servo(self._PIN_RIGHT, self._SPEED[self._PIN_RIGHT][self._BACKWARD])
+
+    def right_stop(self):
+        self._set_servo(self._PIN_RIGHT, self._SPEED[self._PIN_RIGHT][self._STOP])
