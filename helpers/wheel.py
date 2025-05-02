@@ -31,21 +31,21 @@ class WHEEL(SERVO):
         _PIN_FRONT_LEFT: {
             _STOP: 0.2,
             _FORWARD: 1,
-            _BACKWARD: -0.3,
+            _BACKWARD: -1,
         },
         _PIN_FRONT_RIGHT: {
             _STOP: 0.2,
-            _FORWARD: 0.4,
+            _FORWARD: 1,
             _BACKWARD: -1,
         },
         _PIN_BACK_LEFT: {
             _STOP: 0.2,
             _FORWARD: 1,
-            _BACKWARD: -0.3,
+            _BACKWARD: -1,
         },
         _PIN_BACK_RIGHT: {
             _STOP: 0.2,
-            _FORWARD: 0.4,
+            _FORWARD: 1,
             _BACKWARD: -1,
         },
     }
