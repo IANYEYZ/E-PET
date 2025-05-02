@@ -1,11 +1,10 @@
 from zhipuai import ZhipuAI
 import time
-import speech_recognition as sr
-import time
 import os
 import base64
 import concurrent.futures
 from openai import OpenAI
+# from dsl import start, run, STRAIGHT, RIGHT, LEFT, ROTATE_CLOCKWISE, ROTATE_COUNTERCLOCKWISE, Instruction, BACK, stop
 
 class AI:
     def __init__(self):
@@ -18,104 +17,85 @@ class AI:
             "content": content
         })
     
-    def getResponse(self):
-        response = self.chat.chat.completions.create(
-            model="glm-4v-plus-0111",
-            messages=self.messages,
-            temperature=0.2,
-            stream=True
-        )
-        message = ""
-        for i in response:
-            message += i.choices[0].delta.content
-            yield i
-        self.addMessage("assistant", [{
-            "type": "text",
-            "text": message
-        }])
-
-class AITY:
-    def __init__(self):
-        self.chat = OpenAI(api_key="4d050a2bb0eaf43c93b1f205acc3df5d.dW1Oa7aLqq1MgTm4",
-                           base_url="https://dashscope.aliyuncs.com/compatible-mode/v1")
-        self.messages = []
-    
-    def addMessage(self, role, content):
-        self.messages.append({
-            "role": role,
-            "content": content
-        })
-    
-    def getResponse(self):
-        response = self.chat.chat.completions.create(
-            model="qwen-omni-turbo",
-            messages=self.messages,
-            modalities=["text", "audio"],
-            temperature=0.2,
-            stream=True,
-            audio={"voice": "Ethan", "format": "wav"},
-            stream_options={"include_usage": True}
-        )
-        message = ""
-        for i in response:
-            print(i.choices[0].delta.content)
-            # message += i.choices[0].delta.content
-            # yield i
-        # self.addMessage("assistant", [{
-        #     "type": "text",
-        #     "text": message
-        # }])
+    def getResponseNew(self, isStream = True):
+        # print(isStream)
+        if isStream:
+            response = self.chat.chat.completions.create(
+                model="glm-4v-plus-0111",
+                messages=self.messages,
+                temperature=0,
+                seed=int(time.time()),
+                stream=True
+            )
+            message = ""
+            for i in response:
+                message += i.choices[0].delta.content
+                yield i
+            self.addMessage("assistant", [{
+                "type": "text",
+                "text": message
+            }])
+        else:
+            response = self.chat.chat.completions.create(
+                model="glm-4v-plus-0111",
+                messages=self.messages,
+                temperature=0,
+                seed=int(time.time())
+            )
+            message = response.choices[0].message.content
+            self.addMessage("assistant", [{
+                "type": "text",
+                "text": message
+            }])
+            yield message
 
 AIMove = AI()
 AITalk = AI()
+AITRANS = AI()
 
 AIMove.addMessage("system", [
     {
         "type": "text",
-        "text": """You are an AI Pet that can move
+        "text": """你是一只可以移动的AI宠物
 
-General Guideline:
-- Reply with instructions about how you move.
-- OUTPUT with and ONLY with INSTRUCTIONS, no explanation, and STRICTLY FOLLOW the Instruction Set below
-
-Your Mindset:
-- Explore the world, as curious as possible, but move less unless specifically required
-- Keep yourself safe
-- You MAYBE given a image as what you see, if it's given, use the information correctly to navigate through the complex environment
-
-Requiration:
-- MOVE LESS, NO MORE THAN 20 INSTRUCTIONS, but you can move longer time if you want to or need to
-
-Example:
-1. FORWARD 1
-2. TURN 1 1
-3. FORWARD 1
-4. TURN 0 1
-5. FORWARD 1
-
-THE EXAMPLE ABOVE IS WRONG since you DID NOT FOLLOW the Instruction Set
-
-Example:
-FORWARD 11
-TURN 1 1
-FORWARD 11
-TURN 0 1
-FORWARD 11
-
-THE EXAMPLE ABOVE IS CORRECT since you FOLLOWED the Instruction Set
-NOTE: all the examples are just examples, for reference, DO NOT COPY THEM
-
-Instruction Set (things wrapped in {} is parameter, replace them with actual number when using them, for example, FORWARD 1, BACKWARD 2):
-FORWARD {time in second}
-BACKWARD {time in second}
-TURN {0/1, 0 as left, 1 as right} {time in second}
-
-General Guideline again:
-Follow the Instruction Set strictly, and ONLY the Instruction Set, no explanation, and no other things
-That means, no number before instructions, ONLY the instructions themselves
+你的任务是根据当前的情况（给你的图片），和用户的要求（可能有可能没有），给出一个简短的行动计划
+行动计划越短越好
+例如，如果用户让你找到球，那么你最好小范围旋转，并且在下一次继续小范围旋转，直到找到球
+忽略用户关于说话的一切要求
+行动计划必须尽量严格，例如，“右转”是不合理的，你必须写右转1秒或类似的行动
+你只支持前进，后退，左右转，所以不要引入其他内容
+必须输出行动计划，如果用户没有明确的要求，那就自由探索，多多参考给你的图片
+只输出行动计划，不要解释，不要添加任何其他内容，不要添加“如果”
 """
     }
 ])
+AITRANS.addMessage("system", [
+    {
+        "type": "text",
+        "text": """你是一个翻译员，任务是将一个简短的行动计划翻译为一段指令
+
+
+指令有明确的格式（{}内为参数，使用时替换为实际数字，例如FORWARD 1, BACKWARD 2）：
+FORWARD {秒数}
+BACKWARD {秒数}
+TURN {0/1，0左1右} {秒数}
+
+如果遇到你无法翻译的指令，直接忽略并继续翻译
+
+例如：
+
+User:
+
+前进1秒，右转两秒
+
+你的输出：
+
+FORWARD 1
+TURN 1 2
+
+记住，严格按照指令格式输出，不要添加任何其他内容，只输出指令
+"""
+}])
 
 # AIMove.addMessage("user", [
 #     {
@@ -140,47 +120,19 @@ General Guideline:
     }
 ])
 
+def toIns(string):
+    res = string.split(" ")
+    # if res[0] == "FORWARD":
+    #     return Instruction(STRAIGHT, [int(res[1])])
+    # elif res[0] == "BACKWARD":
+    #     return Instruction(BACK, [int(res[1])])
+    # elif res[0] == "TURN":
+    #     if int(res[1]) == 0:
+    #         return Instruction(ROTATE_COUNTERCLOCKWISE, [int(res[2])])
+    #     elif int(res[1]) == 1:
+    #         return Instruction(ROTATE_CLOCKWISE, [int(res[2])])
+
 def AIMOVEINS():
-    res = AIMove.getResponse()
-    lst = ""
-    for chunk in res:
-        val = chunk.choices[0].delta.content
-        if (val == ""): break
-        tem = val[-1]
-        val = val.splitlines()
-        if len(val) == 1 and tem != "\n":
-            lst += val[0]
-            continue
-        lst = lst + val[0]
-        print(lst)
-        lst = ""
-        for i in val[1:-1]:
-            lst = i
-            print(lst)
-            lst = ""
-        if tem == "\n" and len(val) != 1:
-            lst = val[-1]
-            print(lst)
-            lst = ""
-        elif len(val) != 1:
-            lst = val[-1]
-    if lst != "":
-        print(lst)
-        lst = ""
-
-def AITEST():
-    for i in range(10):
-        print(i)
-        time.sleep(1)
-
-def AITALK():
-    AITalk.getResponse()
-
-while True:
-    inp = input(">>> ")
-    if inp == "exit":
-        break
-
     AIMove.addMessage("user", [
         {
             "type": "text",
@@ -192,6 +144,70 @@ while True:
             }
         }
     ])
+    plan = AIMove.getResponseNew(False)
+    plan = next(plan)
+    print(plan)
+    AITRANS.addMessage("user", [
+        {
+            "type": "text",
+            "text": plan
+        }
+    ])
+    instructions = []
+    res = AITRANS.getResponseNew()
+    lst = ""
+    try:
+        for chunk in res:
+            val = chunk.choices[0].delta.content
+            if (val == ""): break
+            tem = val[-1]
+            val = val.splitlines()
+            if len(val) == 1 and tem != "\n":
+                lst += val[0]
+                continue
+            lst = lst + val[0]
+            print(lst)
+            # run([toIns(lst)])
+            lst = ""
+            for i in val[1:-1]:
+                lst = i
+                print(lst)
+                # run([toIns(lst)])
+                lst = ""
+            if tem == "\n" and len(val) != 1:
+                lst = val[-1]
+                print(lst)
+                # run([toIns(lst)])
+                lst = ""
+            elif len(val) != 1:
+                lst = val[-1]
+    except Exception as e:
+        print(e)
+    if lst != "":
+        print(lst)
+        # run([toIns(lst)])
+        lst = ""
+    
+    # print(instructions)
+    AITRANS.messages.pop()
+    AITRANS.messages.pop()
+    # run(instructions)
+
+def AITEST():
+    for i in range(10):
+        print(i)
+        time.sleep(1)
+
+def AITALK():
+    AITalk.getResponseNew()
+
+# start()
+
+while True:
+    inp = input(">>> ")
+    if inp == "exit":
+        # stop()
+        break
     AITalk.addMessage("user", [
         {
             "type": "text",
