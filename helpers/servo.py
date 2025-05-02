@@ -17,7 +17,7 @@
 
 
 import time
-from adafruit_servokit import ServoKit
+from adafruit_servokit import ServoKit # type: ignore
 
 class SERVO:
     _STOP = 0.2
@@ -27,5 +27,5 @@ class SERVO:
     def __init__(self):
         self._kit = ServoKit(channels = 16)
 
-    def _set_servo(pin, mode):
-        kit.continuous_servo[pin].throttle = mode
+    def _set_servo(self, pin, mode):
+        self._kit.continuous_servo[pin].throttle = mode

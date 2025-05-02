@@ -27,10 +27,10 @@ class WHEEL(SERVO):
         super().__init__()
 
     def _set_all_servo(self, mode):
-        self._set_servo(_PIN_FRONT_LEFT, mode[0])
-        self._set_servo(_PIN_FRONT_RIGHT, mode[1])
-        self._set_servo(_PIN_BACK_LEFT, mode[2])
-        self._set_servo(_PIN_BACK_RIGHT, mode[3])
+        self._set_servo(self._PIN_FRONT_LEFT, mode[0])
+        self._set_servo(self._PIN_FRONT_RIGHT, mode[1])
+        self._set_servo(self._PIN_BACK_LEFT, mode[2])
+        self._set_servo(self._PIN_BACK_RIGHT, mode[3])
 
     def straight(self):
         self._set_all_servo(self._FORWARD,self._BACKWARD,self._FORWARD,self._BACKWARD)

@@ -25,5 +25,5 @@ class ARM(SERVO):
         super().__init__()
 
     def _set_all_servo(self, mode):
-        self._set_servo(_PIN_LEFT, mode[0])
-        self._set_servo(_PIN_RIGHT, mode[1])
+        self._set_servo(self._PIN_LEFT, mode[0])
+        self._set_servo(self._PIN_RIGHT, mode[1])
