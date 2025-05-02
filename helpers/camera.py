@@ -37,3 +37,5 @@ class CAMERA:
                 ).decode('utf-8')
             else:
                 return None
+
+camera = CAMERA()

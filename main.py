@@ -4,7 +4,7 @@ import os
 import base64
 import concurrent.futures
 from openai import OpenAI
-# from dsl import start, run, STRAIGHT, RIGHT, LEFT, ROTATE_CLOCKWISE, ROTATE_COUNTERCLOCKWISE, Instruction, BACK, stop
+from ddsl import start, run, STRAIGHT, RIGHT, LEFT, ROTATE_CLOCKWISE, ROTATE_COUNTERCLOCKWISE, Instruction, BACK, stop
 
 class AI:
     def __init__(self):
@@ -172,17 +172,17 @@ def AIMOVEINS():
                 continue
             lst = lst + val[0]
             print(lst)
-            # run([toIns(lst)])
+            run([toIns(lst)])
             lst = ""
             for i in val[1:-1]:
                 lst = i
                 print(lst)
-                # run([toIns(lst)])
+                run([toIns(lst)])
                 lst = ""
             if tem == "\n" and len(val) != 1:
                 lst = val[-1]
                 print(lst)
-                # run([toIns(lst)])
+                run([toIns(lst)])
                 lst = ""
             elif len(val) != 1:
                 lst = val[-1]
@@ -190,12 +190,12 @@ def AIMOVEINS():
         print(e)
     if lst != "":
         print(lst)
-        # run([toIns(lst)])
+        run([toIns(lst)])
         lst = ""
     
     # print(instructions)
     AITRANS.messages.pop()
-    print(AITRANS.messages)
+    # print(AITRANS.messages)
     # run(instructions)
 
 def AITEST():
@@ -206,12 +206,12 @@ def AITEST():
 def AITALK():
     AITalk.getResponseNew()
 
-# start()
+start()
 
 while True:
     inp = input(">>> ")
     if inp == "exit":
-        # stop()
+        stop()
         break
     AITalk.addMessage("user", [
         {
