@@ -16,7 +16,6 @@
 # along with E-PET.  If not, see <https://www.gnu.org/licenses/>.
 
 import base64
-from unittest import result
 import cv2 # type: ignore
 from PIL import Image
 
