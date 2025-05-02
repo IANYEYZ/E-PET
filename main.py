@@ -1,17 +1,17 @@
-from zhipuai import ZhipuAI
+from zhipuai import ZhipuAI # type: ignore
 import time
 import os
 import base64
 import concurrent.futures
-from openai import OpenAI
+from openai import OpenAI # type: ignore
 from ddsl import start, run, STRAIGHT, RIGHT, LEFT, ROTATE_CLOCKWISE, ROTATE_COUNTERCLOCKWISE, Instruction, BACK, stop
 from ddsl import camera
 from queue import Queue
 import threading
-import sounddevice as sd
-import speech_recognition as sr
+import sounddevice as sd # type: ignore
+import speech_recognition as sr # type: ignore
 import numpy as np
-import soundfile as sf
+import soundfile as sf # type: ignore
 # from helpers.camera import camera
 
 class MIC:
