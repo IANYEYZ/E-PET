@@ -26,7 +26,9 @@ arm = ARM()
 servo = SERVO()
 wheel = WHEEL()
 
-NOOP, FORWARD, BACKWARD = 0, 1, 2
+NOOP, \
+STRAIGHT, RIGHT, LEFT, ROTATE_CLOCKWISE, ROTATE_COUNTERCLOCKWISE, BACK\
+     = range(7)
 
 class Instruction:
     def __init__(self, typ = NOOP, args = None):
@@ -53,14 +55,26 @@ def run_instructions():
             if instruction.typ == NOOP:
                 logging.debug("Executing NOOP instruction")
                 pass
-            elif instruction.typ == FORWARD:
-                logging.debug(f"Executing FORWARD instruction with args: {instruction.args}")
-                wheel.straight()
-                sleep(instruction.args[0])
-                wheel.stop()
-            elif instruction.typ == BACKWARD:
-                logging.debug(f"Executing BACKWARD instruction with args: {instruction.args}")
-                wheel.back()
+            elif instruction.typ >= STRAIGHT and instruction.typ <= BACK:
+                nameMapping = {
+                    STRAIGHT: "straight",
+                    RIGHT: "right",
+                    LEFT: "left",
+                    ROTATE_CLOCKWISE: "rotate_clockwise",
+                    ROTATE_COUNTERCLOCKWISE: "rotate_counterclockwise",
+                    BACK: "back",
+                }
+                mapping = {
+                    STRAIGHT: wheel.straight,
+                    RIGHT: wheel.right,
+                    LEFT: wheel.left,
+                    ROTATE_CLOCKWISE: wheel.rotate_clockwise,
+                    ROTATE_COUNTERCLOCKWISE: wheel.rotate_counterclockwise,
+                    BACK: wheel.back,
+                }
+                logging.debug(f"Executing {nameMapping[instruction.typ]} instruction with args: {instruction.args}")
+                assert len(instruction.args) == 1, "Expected 1 argument for wheel instructions"
+                mapping[instruction.typ]()
                 sleep(instruction.args[0])
                 wheel.stop()
         else:

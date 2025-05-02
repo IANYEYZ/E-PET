@@ -31,21 +31,21 @@ class WHEEL(SERVO):
         _PIN_FRONT_LEFT: {
             _STOP: 0.2,
             _FORWARD: 1,
-            _BACKWARD: -0.2,
+            _BACKWARD: -0.3,
         },
         _PIN_FRONT_RIGHT: {
             _STOP: 0.2,
-            _FORWARD: 0.6,
+            _FORWARD: 0.4,
             _BACKWARD: -1,
         },
         _PIN_BACK_LEFT: {
             _STOP: 0.2,
             _FORWARD: 1,
-            _BACKWARD: -0.2,
+            _BACKWARD: -0.3,
         },
         _PIN_BACK_RIGHT: {
             _STOP: 0.2,
-            _FORWARD: 0.6,
+            _FORWARD: 0.4,
             _BACKWARD: -1,
         },
     }
@@ -71,7 +71,7 @@ class WHEEL(SERVO):
     def rotate_clockwise(self):
         self._set_all_servo([self._FORWARD, self._FORWARD, self._FORWARD, self._FORWARD])
 
-    def rotate_under_clockwise(self):
+    def rotate_counterclockwise(self):
         self._set_all_servo([self._BACKWARD, self._BACKWARD, self._BACKWARD, self._BACKWARD])
 
     def back(self):
