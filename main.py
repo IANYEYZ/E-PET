@@ -61,6 +61,8 @@ AIMove.addMessage("system", [
 你的任务是根据当前的情况（给你的图片），和用户的要求（可能有可能没有），给出一个简短的行动计划
 行动计划越短越好
 例如，如果用户让你找到球，那么你最好小范围旋转，并且在下一次继续小范围旋转，直到找到球
+用户的需求可能是抽象的，例如“探索”或“寻找一个球”，此时你需要有长范围思考，例如，如果说要找球，那可以被分为先定位，再到达的两步，定位时，可以先旋转短时间，然后等到下一次对话（也就是下一个计划时）再进行短时间旋转，以此类推，直至定位到球
+你的一个计划可以只干一些小事，等到下一个对话（用户可能会不给你提新要求，此时就继续你想干的事，例如说你想要旋转来找球，上一个计划旋转了 0.5 秒，那么这个计划你可以再旋转 0.5 秒（如果你没找到球的话），或者向球行进（如果你的上一个计划找到了球），当然如果用户提了别的要求，就按照用户的要求来）
 忽略用户关于说话的一切要求
 行动计划必须尽量严格，例如，“右转”是不合理的，你必须写右转1秒或类似的行动
 你只支持前进，后退，左右转，所以不要引入其他内容
@@ -74,6 +76,7 @@ AITRANS.addMessage("system", [
         "type": "text",
         "text": """你是一个翻译员，任务是将一个简短的行动计划翻译为一段指令
 
+你必须进行且仅进行翻译，不要管计划的可行性
 
 指令有明确的格式（{}内为参数，使用时替换为实际数字，例如FORWARD 1, BACKWARD 2）：
 FORWARD {秒数}
@@ -93,7 +96,7 @@ User:
 FORWARD 1
 TURN 1 2
 
-记住，严格按照指令格式输出，不要添加任何其他内容，只输出指令
+记住，严格按照指令格式输出，不要添加包括但不限于解释等的任何其他内容，只输出指令
 """
 }])
 
@@ -123,14 +126,14 @@ General Guideline:
 def toIns(string):
     res = string.split(" ")
     # if res[0] == "FORWARD":
-    #     return Instruction(STRAIGHT, [int(res[1])])
+    #     return Instruction(STRAIGHT, [float(res[1])])
     # elif res[0] == "BACKWARD":
-    #     return Instruction(BACK, [int(res[1])])
+    #     return Instruction(BACK, [float(res[1])])
     # elif res[0] == "TURN":
     #     if int(res[1]) == 0:
-    #         return Instruction(ROTATE_COUNTERCLOCKWISE, [int(res[2])])
+    #         return Instruction(ROTATE_COUNTERCLOCKWISE, [float(res[2])])
     #     elif int(res[1]) == 1:
-    #         return Instruction(ROTATE_CLOCKWISE, [int(res[2])])
+    #         return Instruction(ROTATE_CLOCKWISE, [float(res[2])])
 
 def AIMOVEINS():
     AIMove.addMessage("user", [
@@ -190,7 +193,7 @@ def AIMOVEINS():
     
     # print(instructions)
     AITRANS.messages.pop()
-    AITRANS.messages.pop()
+    print(AITRANS.messages)
     # run(instructions)
 
 def AITEST():
