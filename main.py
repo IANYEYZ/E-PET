@@ -3,14 +3,14 @@ import time
 import os
 import base64
 import concurrent.futures
-from ddsl import start, run, STRAIGHT, RIGHT, LEFT, ROTATE_CLOCKWISE, ROTATE_COUNTERCLOCKWISE, Instruction, BACK, stop
-from ddsl import camera
+from dsl import start, run, STRAIGHT, RIGHT, LEFT, ROTATE_CLOCKWISE, ROTATE_COUNTERCLOCKWISE, Instruction, BACK, stop
+# from ddsl import camera
 from queue import Queue
 import threading
 import sounddevice as sd
 import numpy as np
 import soundfile as sf # type: ignore
-# from helpers.camera import camera
+from helpers.camera import camera
 from helpers.mic import MIC
 from dashscope import MultiModalConversation
 import dashscope
@@ -22,7 +22,7 @@ class AI:
     def __init__(self):
         # 使用Qwen的API，这里假设使用OpenAI兼容的API格式
         self.client = OpenAI(
-            base_url="https://api.tongyi.aliyun.com/v1",  # 通义千问的API地址
+            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",  # 通义千问的API地址
             api_key="sk-64b475070dbd4755a53ea2d0368c3ec2"  # 替换为你的API key
         )
         self.messages = []
@@ -34,9 +34,10 @@ class AI:
         })
     
     def getResponseNew(self, isStream=True):
+        print("getResponseNew")
         if isStream:
-            response = dashscope.Generation.call(
-                model="qwen-vl-plus",  # 使用Qwen的多模态模型
+            response = self.client.chat.completions.create(
+                model="qwen-vl-max-latest",  # 使用Qwen的多模态模型
                 messages=self.messages,
                 temperature=0,
                 stream=True
@@ -49,13 +50,19 @@ class AI:
                         yield chunk
             self.addMessage("assistant", message)
         else:
-            response = dashscope.Generation.call(
-                model="qwen-vl-plus",
-                messages=self.messages,
-                temperature=0,
-                stream=False
-            )
+            print("Here!!!")
+            try:
+                response = self.client.chat.completions.create(
+                    model="qwen-vl-max-latest",
+                    messages=self.messages,
+                    temperature=0,
+                    stream=False
+                )
+            except Exception as e:
+                print(e)
+            print(response)
             message = response.choices[0].message.content
+            print("message:", message)
             self.addMessage("assistant", message)
             yield message
 
@@ -126,15 +133,11 @@ def toIns(string):
             return Instruction(ROTATE_CLOCKWISE, [float(res[2])])
 
 def AIMOVEINS():
+    print("HERE!")
     # 使用Qwen的多模态输入格式
-    AIMove.addMessage("user", [
-        {"type": "text", "text": f"用户要求：\n{inp}"},
-        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{camera.shot()}"}}
-    ])
     
     plan = next(AIMove.getResponseNew(False))
     print(plan)
-    exit(0)
     
     AITRANS.addMessage("user", f"计划：\n{plan}")
     instructions = []
@@ -209,7 +212,11 @@ while True:
     # 添加多模态输入
     AITalk.addMessage("user", [
         {"type": "text", "text": inp},
-        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{camera.shot()}"}}
+        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{camera.shot()}"}}
+    ])
+    AIMove.addMessage("user", [
+        {"type": "text", "text": f"用户要求：\n{inp}"},
+        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{camera.shot()}"}}
     ])
 
     pool = concurrent.futures.ThreadPoolExecutor(max_workers=2)

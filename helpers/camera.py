@@ -30,10 +30,9 @@ class CAMERA:
             ret, frame = cap.read()
             cap.release()
             if ret:
+                _, buffer = cv2.imencode('.png', frame)
                 return base64.b64encode(
-                    Image.fromarray(
-                        cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    ).tobytes()
+                    buffer
                 ).decode('utf-8')
             else:
                 return None
