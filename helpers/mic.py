@@ -20,7 +20,7 @@ import numpy as np
 import noisereduce as nr # type: ignore
 
 class MIC:
-    def __init__(self, samplerate=44100, channels=1, dtype='float32'):
+    def __init__(self, samplerate=16000, channels=1, dtype='float32'):
         self.samplerate = samplerate
         self.channels = channels
         self.dtype = dtype
