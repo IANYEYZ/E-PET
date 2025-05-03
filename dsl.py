@@ -72,16 +72,18 @@ def run_instructions():
                     ROTATE_CLOCKWISE: wheel.rotate_clockwise,
                     ROTATE_COUNTERCLOCKWISE: wheel.rotate_counterclockwise,
                     BACK: wheel.back,
-                    HANDLIFTL: lambda: 0,
-                    HANDLIFTR: lambda: 0,
-                    HANDDOWNL: lambda: 0,
-                    HANDDOWNR: lambda: 0
+                    HANDLIFTL: arm.left_clockwise,
+                    HANDLIFTR: arm.right_counter_clockwise,
+                    HANDDOWNL: arm.left_counter_clockwise,
+                    HANDDOWNR: arm.right_clockwise
                 }
                 logging.debug(f"Executing {nameMapping[instruction.typ]} instruction with args: {instruction.args}")
                 assert len(instruction.args) == 1, "Expected 1 argument for wheel instructions"
                 mapping[instruction.typ]()
                 sleep(instruction.args[0])
                 wheel.stop()
+                arm.left_stop()
+                arm.right_stop()
         else:
             # logging.debug("Instruction queue is empty, sleeping...")
             sleep(0.1)
