@@ -53,4 +53,3 @@ class SPEAKER:
 
     def balloonStop(self):
         self.playingThreadPlay = False
-        self.playingThread.join()
