@@ -16,7 +16,7 @@
 # along with E-PET.  If not, see <https://www.gnu.org/licenses/>.
 
 import numpy as np
-import pyaudio
+import pyaudio # type: ignore
 from queue import Queue
 import threading
 import time
