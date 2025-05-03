@@ -3,24 +3,29 @@ import time
 import os
 import base64
 import concurrent.futures
-from ddsl import start, run, STRAIGHT, RIGHT, LEFT, ROTATE_CLOCKWISE, ROTATE_COUNTERCLOCKWISE, Instruction, BACK, stop, HANDLIFTL, HANDLIFTR, HANDDOWNR, HANDDOWNL
-from ddsl import camera
+from dsl import start, run, STRAIGHT, RIGHT, LEFT, ROTATE_CLOCKWISE, ROTATE_COUNTERCLOCKWISE, Instruction, BACK, stop, HANDLIFTL, HANDLIFTR, HANDDOWNR, HANDDOWNL
+# from ddsl import camera
 from queue import Queue
 import threading
 import sounddevice as sd
 import numpy as np
 import soundfile as sf # type: ignore
-# from helpers.camera import camera
+from helpers.camera import camera
 from helpers.mic import MIC
-# from helpers.speaker import SPEAKER
+from helpers.speaker import SPEAKER
 from dashscope import MultiModalConversation
 import dashscope
 import pyaudio
 from helpers.screen import disp
 from PIL import Image
+import alsaaudio
 
+gif = Image.open("emotions/blink.gif")
+for j in range(gif.n_frames):
+    gif.seek(j)
+    disp.ShowImage(gif.convert('RGB'))
 mic = MIC()
-# speaker = SPEAKER()
+speaker = SPEAKER()
 dashscope.api_key = "sk-64b475070dbd4755a53ea2d0368c3ec2"
 
 class AI:
@@ -97,6 +102,10 @@ class AIMULTI:
             stream=True,
             stream_options={"include_usage": True},
         )
+        # 设置音量
+        m = alsaaudio.Mixer('Master')
+        # 设置音量为最大 100%
+        m.setvolume(100)
         p = pyaudio.PyAudio()
         # 创建音频流
         stream = p.open(format=pyaudio.paInt16,
@@ -292,34 +301,35 @@ def AIEmotion():
     AIEMOTE.messages.pop()
     print(res)
     if res == "开心":
-        gif = Image("emotions/happy.gif")
+        gif = Image.open("emotions/blink.gif")
         for i in range(3):
             for j in range(gif.n_frames):
                 gif.seek(j)
-                disp.showImage(gif.convert('RGB'))
+                disp.ShowImage(gif.convert('RGB'))
     if res == "悲伤":
-        gif = Image("emotions/sad.gif")
+        gif = Image.open("emotions/sad.gif")
         for i in range(3):
             for j in range(gif.n_frames):
                 gif.seek(j)
-                disp.showImage(gif.convert('RGB'))
+                disp.ShowImage(gif.convert('RGB'))
     if res == "晕眩":
-        gif = Image("emotions/dizzy.gif")
+        gif = Image.open("emotions/dizzy.gif")
         for i in range(3):
             for j in range(gif.n_frames):
                 gif.seek(j)
-                disp.showImage(gif.convert('RGB'))
+                disp.ShowImage(gif.convert('RGB'))
 
 start()
 # mic.start()
 # time.sleep(3)
 while True:
     mic.start()
-    # speaker.speechOn()
+    speaker.speechOn()
+    # inp = mic.recordUntilSilence()
     time.sleep(5)
     inp = mic.stop()
     st = time.time()
-    # speaker.speechOff()
+    speaker.speechOff()
     print(inp)
     if inp.size > 0:
         sf.write("output.wav", inp, mic.samplerate)

@@ -47,14 +47,3 @@ class SPEAKER:
 
     def speechOff(self):
         self.play("Speech Off.wav")
-
-    def _balloonDo(self):
-        while self.playingThreadPlay:
-            self.play("ding.wav")
-
-    def balloonStart(self):
-        self.playingThreadPlay = True
-        self.playingThread = Thread(target=self._balloonDo)
-
-    def balloonStop(self):
-        self.playingThreadPlay = False

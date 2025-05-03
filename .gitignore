@@ -4,3 +4,5 @@ __pycache__
 .mypy_cache
 helpers/lib.py
 output.wav
+.ipynb_checkpoints
+.DS_Store

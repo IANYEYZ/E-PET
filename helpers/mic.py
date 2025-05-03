@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with E-PET.  If not, see <https://www.gnu.org/licenses/>.
 
+import os
 import numpy as np
 import pyaudio # type: ignore
 from queue import Queue
@@ -184,6 +185,8 @@ class MIC:
                 if speech_detected and silent_samples >= required_silent_samples:
                     return (None, pyaudio.paComplete)
             return (None, pyaudio.paContinue)
+        
+        os.system('amixer -c 0 cset numid=3 7 > /dev/null 2>&1')
 
         stream = self.pyaudio_instance.open(
             format=self.format,
