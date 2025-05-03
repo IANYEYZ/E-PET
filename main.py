@@ -16,6 +16,8 @@ from helpers.speaker import SPEAKER
 from dashscope import MultiModalConversation
 import dashscope
 import pyaudio
+from helpers.screen import disp
+from PIL import Image
 
 mic = MIC()
 speaker = SPEAKER()
@@ -123,6 +125,7 @@ AIMove = AI()
 AITalk = AIMULTI()
 AITRANS = AI()
 AIControl = AI()
+AIEMOTE = AI()
 
 AIControl.addMessage("system", """你是一个 AI 宠物的大脑
 
@@ -202,6 +205,12 @@ AITalk.addMessage("system", """你是一个可移动的 AI 宠物的语言部分
 你说的所有内容都必须是 TALK: 前缀后的，不要自由发挥，TALK: 后面写了什么你就讲什么
 """)
 
+AIEMOTE.addMessage("system", """你是一个可移动的 AI 宠物的情感负责人
+
+你的任务是根据大脑给你的安排，提取出其中的情绪
+输出且仅输出一个词，为 开心、悲伤、晕眩 中的一个
+""")
+
 def toIns(string):
     if string == "":
         return Instruction(STRAIGHT, [0])
@@ -279,6 +288,15 @@ def AITALK():
     AITalk.messages.pop()
     AITalk.messages.pop()
 
+def AIEmotion():
+    res = AIEMOTE.getResponseNew()
+    AIEMOTE.messages.pop()
+    AIEMOTE.messages.pop()
+    if res == "开心":
+        gif = Image("emotions/happy.gif")
+        for i in range(3):
+            disp.showImage()
+
 start()
 # mic.start()
 # time.sleep(3)
@@ -318,6 +336,7 @@ while True:
     print(res)
     AITalk.addMessage("user", f"安排：\n{res}")
     AIMove.addMessage("user", f"安排：\n{res}")
+    AIEMOTE.addMessage("user", f"安排：\n{res}")
 
     pool = concurrent.futures.ThreadPoolExecutor(max_workers=2)
     pool.submit(AIMOVEINS)
