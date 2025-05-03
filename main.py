@@ -3,7 +3,7 @@ import time
 import os
 import base64
 import concurrent.futures
-from ddsl import start, run, STRAIGHT, RIGHT, LEFT, ROTATE_CLOCKWISE, ROTATE_COUNTERCLOCKWISE, Instruction, BACK, stop
+from ddsl import start, run, STRAIGHT, RIGHT, LEFT, ROTATE_CLOCKWISE, ROTATE_COUNTERCLOCKWISE, Instruction, BACK, stop, HANDLIFTL, HANDLIFTR, HANDDOWNR, HANDDOWNL
 from ddsl import camera
 from queue import Queue
 import threading
@@ -35,7 +35,7 @@ class AI:
         })
     
     def getResponseNew(self, isStream=True):
-        print("getResponseNew")
+        # print("getResponseNew")
         if isStream:
             response = self.client.chat.completions.create(
                 model="qwen-vl-max-latest",  # 使用Qwen的多模态模型
@@ -51,7 +51,7 @@ class AI:
                         yield chunk
             self.addMessage("assistant", message)
         else:
-            print("Here!!!")
+            # print("Here!!!")
             try:
                 response = self.client.chat.completions.create(
                     model="qwen-vl-max-latest",
@@ -61,9 +61,9 @@ class AI:
                 )
             except Exception as e:
                 print(e)
-            print(response)
+            # print(response)
             message = response.choices[0].message.content
-            print("message:", message)
+            # print("message:", message)
             self.addMessage("assistant", message)
             yield message
 
@@ -113,7 +113,7 @@ class AIMULTI:
                         message += chunk.choices[0].delta.audio["transcript"]
                         # print(chunk.choices[0].delta.audio["transcript"])
                     # print(chunk.choices[0])
-        print("message:", message)
+        # print("message:", message)
         self.addMessage("assistant", message)
 
 
@@ -150,7 +150,7 @@ AIMove.addMessage("system", """你是一只可以移动的AI宠物的运动模�
 
 你的任务是根据大脑定出的简短安排，给出一个行动计划
 你拿到的安排中可能有与说话相关的安排，请忽略安排中一切与说话有关的部分
-行动计划必须尽量严格，例如，"右转"是不合理的，你必须写右转1秒或类似的行动
+行动计划必须尽量严格，例如，"右转"是不合理的，你必须写右转1秒或类似的行动；“抬手”是不合理的，同样“抬右手”或“抬左手”也不合理，但是 “抬右手 1 秒” 是合理的
 你只支持前进，后退，左右转，抬左右手，放左右手，所以不要引入其他内容，包括但不限于"重复 x 次"等都不能引入
 只输出行动计划，不要解释，不要添加任何其他内容，不要添加"如果"
 """)
@@ -197,6 +197,7 @@ AITalk.addMessage("system", """你是一个可移动的 AI 宠物的语言部分
 所有要讲的内容都是以你为主要身份的，所以用第一人称叙事
 请一定注意，所有的命令等都是向你发出的，在说话时注意，所有的话（如先向左转观察）是你这个 AI 宠物做的事，不是用户做的事！
 你拿到的“用户输入”实际上是你的“大脑”作出的，请在说话时一定不允许提到这个“安排”，而是直接把要说的说出来
+你说的所有内容都必须是 TALK: 前缀后的，不要自由发挥，TALK: 后面写了什么你就讲什么
 """)
 
 def toIns(string):
@@ -214,7 +215,14 @@ def toIns(string):
             return Instruction(ROTATE_CLOCKWISE, [float(res[2])])
     elif res[0] == "HANDLIFT":
         if int(res[1]) == 0:
-            return Instruction()
+            return Instruction(HANDLIFTL, [float(res[2])])
+        elif int(res[1]) == 1:
+            return Instruction(HANDLIFTR, [float(res[2])])
+    elif res[0] == "HANDDOWN":
+        if int(res[1]) == 0:
+            return Instruction(HANDDOWNL, [float(res[2])])
+        elif int(res[1]) == 1:
+            return Instruction(HANDDOWNR, [float(res[2])])
 
 def AIMOVEINS():
     print("HERE!")
@@ -266,6 +274,8 @@ def AIMOVEINS():
 
 def AITALK():
     AITalk.getResponseNew()
+    AITalk.messages.pop()
+    AITalk.messages.pop()
 
 start()
 # mic.start()
