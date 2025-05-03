@@ -20,8 +20,9 @@
 # 📦 导入库
 import os
 import sounddevice as sd # type: ignore
-import simpleaudio as sa # type: ignore
 from threading import Thread
+import pyaudio
+import numpy as np
 
 class SPEAKER:
     def __init__(self):
@@ -46,10 +47,28 @@ class SPEAKER:
             print("No sound is playing.")
 
     def speechOn(self):
-        self.play("media/Speech On.wav")
+        p = pyaudio.PyAudio()
+            # 创建音频流
+        stream = p.open(format=pyaudio.paInt16,
+                            channels=1,
+                            rate=44100,
+                            output=True)
+        wav_bytes = open("media/Speech On.wav", "rb").read()
+        audio_np = np.frombuffer(wav_bytes, dtype=np.int16)
+        # 直接播放音频数据
+        stream.write(audio_np.tobytes())
 
     def speechOff(self):
-        self.play("media/Speech Off.wav")
+        p = pyaudio.PyAudio()
+            # 创建音频流
+        stream = p.open(format=pyaudio.paInt16,
+                            channels=1,
+                            rate=44100,
+                            output=True)
+        wav_bytes = open("media/Speech Off.wav", "rb").read()
+        audio_np = np.frombuffer(wav_bytes, dtype=np.int16)
+        # 直接播放音频数据
+        stream.write(audio_np.tobytes())
 
     def _balloonDo(self):
         while self.playingThreadPlay:

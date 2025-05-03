@@ -12,11 +12,13 @@ import numpy as np
 import soundfile as sf # type: ignore
 # from helpers.camera import camera
 from helpers.mic import MIC
+from helpers.speaker import SPEAKER
 from dashscope import MultiModalConversation
 import dashscope
 import pyaudio
 
 mic = MIC()
+speaker = SPEAKER()
 dashscope.api_key = "sk-64b475070dbd4755a53ea2d0368c3ec2"
 
 class AI:
@@ -282,8 +284,10 @@ start()
 # time.sleep(3)
 while True:
     mic.start()
+    speaker.speechOn()
     time.sleep(5)
     inp = mic.stop()
+    speaker.speechOff()
     print(inp)
     if inp.size > 0:
         sf.write("output.wav", inp, mic.samplerate)
