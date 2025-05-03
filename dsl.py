@@ -39,7 +39,7 @@ instruction_queue = []
 instruction_thread = None
 instruction_running = False
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def run(listOfInstructions):
     global instruction_queue
