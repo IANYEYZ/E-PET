@@ -151,7 +151,7 @@ AIMove.addMessage("system", """你是一只可以移动的AI宠物的运动模�
 你的任务是根据大脑定出的简短安排，给出一个行动计划
 你拿到的安排中可能有与说话相关的安排，请忽略安排中一切与说话有关的部分
 行动计划必须尽量严格，例如，"右转"是不合理的，你必须写右转1秒或类似的行动
-你只支持前进，后退，左右转，抬左右手，所以不要引入其他内容，包括但不限于"重复 x 次"等都不能引入
+你只支持前进，后退，左右转，抬左右手，放左右手，所以不要引入其他内容，包括但不限于"重复 x 次"等都不能引入
 只输出行动计划，不要解释，不要添加任何其他内容，不要添加"如果"
 """)
 
@@ -163,7 +163,8 @@ AITRANS.addMessage("system", """你是一个翻译员，任务是将一个简短
 FORWARD {秒数}
 BACKWARD {秒数}
 TURN {0/1，0左1右} {秒数}
-HANDLIFT {0/1，0左1友} {秒数}
+HANDLIFT {0/1，0左1右} {秒数}
+HANDDOWN {0/1，0左1右} {秒数}
 
 如果遇到你无法翻译的指令，直接忽略并继续翻译
 
@@ -171,12 +172,13 @@ HANDLIFT {0/1，0左1友} {秒数}
 
 User:
 
-前进 1 秒，右转 2 秒
+前进 1 秒，右转 2 秒，抬左手 1 秒
 
 你的输出：
 
 FORWARD 1
 TURN 1 2
+HANDLIFT 0 1
 
 注意以上只是个例子
 
@@ -194,6 +196,7 @@ AITalk.addMessage("system", """你是一个可移动的 AI 宠物的语言部分
 主语要用“我”，同时注意把安排中定为要说的部分都说出来，不要少说
 所有要讲的内容都是以你为主要身份的，所以用第一人称叙事
 请一定注意，所有的命令等都是向你发出的，在说话时注意，所有的话（如先向左转观察）是你这个 AI 宠物做的事，不是用户做的事！
+你拿到的“用户输入”实际上是你的“大脑”作出的，请在说话时一定不允许提到这个“安排”，而是直接把要说的说出来
 """)
 
 def toIns(string):
@@ -209,6 +212,9 @@ def toIns(string):
             return Instruction(ROTATE_COUNTERCLOCKWISE, [float(res[2])])
         elif int(res[1]) == 1:
             return Instruction(ROTATE_CLOCKWISE, [float(res[2])])
+    elif res[0] == "HANDLIFT":
+        if int(res[1]) == 0:
+            return Instruction()
 
 def AIMOVEINS():
     print("HERE!")
