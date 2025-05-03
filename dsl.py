@@ -63,7 +63,10 @@ def run_instructions():
                     ROTATE_CLOCKWISE: "rotate_clockwise",
                     ROTATE_COUNTERCLOCKWISE: "rotate_counterclockwise",
                     BACK: "back",
-                    HANDLIFTL: "handliftl"
+                    HANDLIFTL: "handliftl",
+                    HANDLIFTR: "handliftr",
+                    HANDDOWNL: "handdownl",
+                    HANDDOWNR: "handdownr"
                 }
                 mapping = {
                     STRAIGHT: wheel.straight,
@@ -72,10 +75,10 @@ def run_instructions():
                     ROTATE_CLOCKWISE: wheel.rotate_clockwise,
                     ROTATE_COUNTERCLOCKWISE: wheel.rotate_counterclockwise,
                     BACK: wheel.back,
-                    HANDLIFTL: arm.left_clockwise,
-                    HANDLIFTR: arm.right_counter_clockwise,
-                    HANDDOWNL: arm.left_counter_clockwise,
-                    HANDDOWNR: arm.right_clockwise
+                    HANDLIFTL: arm.left_counter_clockwise,
+                    HANDLIFTR: arm.right_clockwise,
+                    HANDDOWNL: arm.left_clockwise,
+                    HANDDOWNR: arm.right_counter_clockwise
                 }
                 logging.debug(f"Executing {nameMapping[instruction.typ]} instruction with args: {instruction.args}")
                 assert len(instruction.args) == 1, "Expected 1 argument for wheel instructions"
