@@ -295,7 +295,21 @@ def AIEmotion():
     if res == "开心":
         gif = Image("emotions/happy.gif")
         for i in range(3):
-            disp.showImage()
+            for j in range(gif.n_frames):
+                gif.seek(j)
+                disp.showImage(gif.convert('RGB'))
+    if res == "悲伤":
+        gif = Image("emotions/sad.gif")
+        for i in range(3):
+            for j in range(gif.n_frames):
+                gif.seek(j)
+                disp.showImage(gif.convert('RGB'))
+    if res == "晕眩":
+        gif = Image("emotions/dizzy.gif")
+        for i in range(3):
+            for j in range(gif.n_frames):
+                gif.seek(j)
+                disp.showImage(gif.convert('RGB'))
 
 start()
 # mic.start()
