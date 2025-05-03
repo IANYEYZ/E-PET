@@ -15,46 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with E-PET.  If not, see <https://www.gnu.org/licenses/>.
 
-import sounddevice as sd # type: ignore  
 import numpy as np
-import noisereduce as nr # type: ignore
+import pyaudio
 from queue import Queue
 import threading
-
-# class MIC:
-#     def __init__(self, samplerate=44100, channels=1, dtype='float32'):
-#         self.samplerate = samplerate
-#         self.channels = channels
-#         self.dtype = dtype
-#         self.recording = False
-#         self.data = []
-#         self.stream = None
-
-#     def start(self):
-#         assert not self.recording, "已经在录音"
-#         self.data = []
-#         self.stream = sd.InputStream(
-#             samplerate=self.samplerate,
-#             channels=self.channels,
-#             dtype=self.dtype,
-#             callback=self.callback
-#         )
-#         self.stream.start()
-#         self.recording = True
-
-#     def callback(self, indata, frames, time, status):
-#         self.data.append(indata.copy())
-
-#     def stop(self):
-#         assert self.recording, "未在录音"
-#         self.stream.stop()
-#         self.stream.close()
-#         self.recording = False
-#         recorded_data = np.concatenate(self.data, axis=0)
-#         # reduced_data = nr.reduce_noise(y=recorded_data, sr=self.samplerate)
-#         reduced_data = recorded_data
-#         reduced_data = np.array(reduced_data, dtype=self.dtype)
-#         return reduced_data
+import time
 
 class MIC:
     def __init__(self, samplerate=44100, channels=1, dtype='float32'):
@@ -73,21 +38,33 @@ class MIC:
         self.stream = None
         self.recording_thread = None
         self.is_recording = False
+        self.pyaudio_instance = pyaudio.PyAudio()
+        self.format = pyaudio.paFloat32 if dtype == 'float32' else pyaudio.paInt16
 
-    def _callback(self, indata, frames, time, status):
+    def _callback(self, in_data, frame_count, time_info, status):
         """音频流回调函数，将音频数据放入队列"""
-        if status:
-            print(f"音频流状态: {status}")
-        self.audio_queue.put(indata.copy())
+        if in_data:
+            audio_data = np.frombuffer(in_data, dtype=self.dtype)
+            if self.channels > 1:
+                audio_data = audio_data.reshape(-1, self.channels)
+            self.audio_queue.put(audio_data)
+        return (None, pyaudio.paContinue)
 
     def _record_async(self):
         """异步录制线程函数"""
-        with sd.InputStream(samplerate=self.samplerate,
-                           channels=self.channels,
-                           dtype=self.dtype,
-                           callback=self._callback):
-            while self.is_recording:
-                sd.sleep(100)  # 防止CPU占用过高
+        self.stream = self.pyaudio_instance.open(
+            format=self.format,
+            channels=self.channels,
+            rate=self.samplerate,
+            input=True,
+            stream_callback=self._callback,
+            frames_per_buffer=1024
+        )
+        self.stream.start_stream()
+        while self.is_recording:
+            time.sleep(0.1)  # 防止CPU占用过高
+        self.stream.stop_stream()
+        self.stream.close()
 
     def start(self):
         """
@@ -130,7 +107,76 @@ class MIC:
             print("没有录制到音频数据")
             return np.array([])
 
+    def recordUntilSilence(self, silence_threshold=0.01, silence_duration=1.0):
+        """
+        录制音频直到检测到指定时长的沉默（阻塞）
+        只有在检测到有效语音后才开始判断沉默
+        
+        参数:
+            silence_threshold: 沉默阈值（默认0.01，绝对值小于此视为沉默）
+            silence_duration: 沉默持续时间（秒，默认1.0）
+        
+        返回:
+            numpy.ndarray: 录制的音频数据
+        """
+        audio_chunks = []
+        silent_samples = 0
+        required_silent_samples = int(self.samplerate * silence_duration)
+        chunk_size = 1024
+        speech_detected = False
+
+        def callback(in_data, frame_count, time_info, status):
+            nonlocal silent_samples, audio_chunks, speech_detected
+            if in_data:
+                audio_data = np.frombuffer(in_data, dtype=self.dtype)
+                if self.channels > 1:
+                    audio_data = audio_data.reshape(-1, self.channels)
+                audio_chunks.append(audio_data)
+                
+                # 计算音频绝对值的平均值
+                amplitude = np.abs(audio_data).mean()
+                print(amplitude)
+                
+                # 检测是否有有效语音
+                if amplitude >= silence_threshold:
+                    speech_detected = True
+                    silent_samples = 0
+                elif speech_detected:
+                    # 只有在检测到语音后才开始累积沉默样本
+                    silent_samples += frame_count
+                
+                # 如果检测到语音且沉默时间超过要求，停止录制
+                if speech_detected and silent_samples >= required_silent_samples:
+                    return (None, pyaudio.paComplete)
+            return (None, pyaudio.paContinue)
+
+        stream = self.pyaudio_instance.open(
+            format=self.format,
+            channels=self.channels,
+            rate=self.samplerate,
+            input=True,
+            stream_callback=callback,
+            frames_per_buffer=chunk_size
+        )
+        
+        try:
+            stream.start_stream()
+            while stream.is_active():
+                time.sleep(0.1)
+        finally:
+            stream.stop_stream()
+            stream.close()
+
+        if audio_chunks:
+            audio_data = np.concatenate(audio_chunks)
+            print(f"录制结束（检测到沉默），共录制 {len(audio_data)/self.samplerate:.2f} 秒音频")
+            return audio_data
+        else:
+            print("没有录制到音频数据")
+            return np.array([])
+
     def __del__(self):
         """析构函数，确保资源被释放"""
         if self.is_recording:
             self.stop()
+        self.pyaudio_instance.terminate()
