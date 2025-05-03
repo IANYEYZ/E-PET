@@ -318,10 +318,10 @@ start()
 # mic.start()
 # time.sleep(3)
 while True:
-    mic.start()
+    # mic.start()
     # speaker.speechOn()
-    time.sleep(5)
-    inp = mic.stop()
+    # time.sleep(5)
+    inp = mic.recordUntilSilence()
     # speaker.speechOff()
     print(inp)
     if inp.size > 0:
