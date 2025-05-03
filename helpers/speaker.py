@@ -45,7 +45,7 @@ class SPEAKER:
 
     def _balloonDo(self):
         while self.playingThreadPlay:
-            self.play("Windows Balloon.wav")
+            self.play("ding.wav")
 
     def balloonStart(self):
         self.playingThreadPlay = True
