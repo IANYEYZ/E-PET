@@ -28,13 +28,13 @@ class ARM(SERVO):
     _SPEED = {
         _PIN_LEFT: {
             _STOP: 0.2,
-            _FORWARD: 1,
-            _BACKWARD: -1,
+            _FORWARD: 0.3,
+            _BACKWARD: 0.1,
         },
         _PIN_RIGHT: {
             _STOP: 0.2,
-            _FORWARD: 1,
-            _BACKWARD: -1,
+            _FORWARD: 0.3,
+            _BACKWARD: 0.1,
         },
     }
 
