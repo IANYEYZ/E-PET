@@ -12,7 +12,7 @@ import numpy as np
 import soundfile as sf # type: ignore
 # from helpers.camera import camera
 from helpers.mic import MIC
-from helpers.speaker import SPEAKER
+# from helpers.speaker import SPEAKER
 from dashscope import MultiModalConversation
 import dashscope
 import pyaudio
@@ -20,7 +20,7 @@ from helpers.screen import disp
 from PIL import Image
 
 mic = MIC()
-speaker = SPEAKER()
+# speaker = SPEAKER()
 dashscope.api_key = "sk-64b475070dbd4755a53ea2d0368c3ec2"
 
 class AI:
@@ -146,6 +146,7 @@ AIControl.addMessage("system", """你是一个 AI 宠物的大脑
 比如说，你想要先向左转检查左边，再向右转检查右边，你就只向左转，这样下一次对话时你就能获得左边的信息，然后下一次安排时你再向右转
 所以说，严格不要一次检查两边，或既检查左边又往前走
 严格禁止一次干多件事，如果要检查某物或某个方向，一次最多检查一个，严格禁止检查两个
+除非被要求少距离移动，否则前进后退距离越长越好
 如果是需要反馈的事（如探索某个方向）那么严禁一次干两件或更多，只能干一件！
 输出时，使用有序列表来整理内容，严格区分（例如使用 MOVE: ，TALK: 前缀）动作和说话
 """)
@@ -203,12 +204,13 @@ AITalk.addMessage("system", """你是一个可移动的 AI 宠物的语言部分
 请一定注意，所有的命令等都是向你发出的，在说话时注意，所有的话（如先向左转观察）是你这个 AI 宠物做的事，不是用户做的事！
 你拿到的“用户输入”实际上是你的“大脑”作出的，请在说话时一定不允许提到这个“安排”，而是直接把要说的说出来
 你说的所有内容都必须是 TALK: 前缀后的，不要自由发挥，TALK: 后面写了什么你就讲什么
+给到你的输入中描述环境的部分实际上是你“看到的”，所以不要用“听到”，给你的输入中如果描述了用户的需求，那么是你“听到的”
 """)
 
 AIEMOTE.addMessage("system", """你是一个可移动的 AI 宠物的情感负责人
 
 你的任务是根据大脑给你的安排，提取出其中的情绪
-输出且仅输出一个词，为 开心、悲伤、晕眩 中的一个
+输出且仅输出一个词，为 开心、悲伤、晕眩 中的一个，只输出词，不要有任何解释，换行，空行等
 """)
 
 def toIns(string):
@@ -289,9 +291,10 @@ def AITALK():
     AITalk.messages.pop()
 
 def AIEmotion():
-    res = AIEMOTE.getResponseNew()
+    res = next(AIEMOTE.getResponseNew(False))
     AIEMOTE.messages.pop()
     AIEMOTE.messages.pop()
+    print(res)
     if res == "开心":
         gif = Image("emotions/happy.gif")
         for i in range(3):
@@ -316,10 +319,10 @@ start()
 # time.sleep(3)
 while True:
     mic.start()
-    speaker.speechOn()
+    # speaker.speechOn()
     time.sleep(5)
     inp = mic.stop()
-    speaker.speechOff()
+    # speaker.speechOff()
     print(inp)
     if inp.size > 0:
         sf.write("output.wav", inp, mic.samplerate)
@@ -352,7 +355,8 @@ while True:
     AIMove.addMessage("user", f"安排：\n{res}")
     AIEMOTE.addMessage("user", f"安排：\n{res}")
 
-    pool = concurrent.futures.ThreadPoolExecutor(max_workers=2)
+    pool = concurrent.futures.ThreadPoolExecutor(max_workers=3)
     pool.submit(AIMOVEINS)
     pool.submit(AITALK)
+    pool.submit(AIEmotion)
     pool.shutdown(wait=True)
