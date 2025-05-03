@@ -107,14 +107,14 @@ class MIC:
             print("没有录制到音频数据")
             return np.array([])
 
-    def recordUntilSilence(self, silence_threshold=0.01, silence_duration=1.0):
+    def recordUntilSilence(self, silence_duration=1.0, initial_noise_duration=1.0):
         """
         录制音频直到检测到指定时长的沉默（阻塞）
-        只有在检测到有效语音后才开始判断沉默
+        只有在检测到有效语音后才开始判断沉默，使用短时能量和自适应阈值
         
         参数:
-            silence_threshold: 沉默阈值（默认0.01，绝对值小于此视为沉默）
             silence_duration: 沉默持续时间（秒，默认1.0）
+            initial_noise_duration: 初始背景噪声采样时间（秒，默认1.0）
         
         返回:
             numpy.ndarray: 录制的音频数据
@@ -124,21 +124,56 @@ class MIC:
         required_silent_samples = int(self.samplerate * silence_duration)
         chunk_size = 1024
         speech_detected = False
+        noise_energy_samples = []
+        noise_duration_samples = int(self.samplerate * initial_noise_duration)
+        energy_threshold = None
+        zcr_threshold = 0.1  # 默认零交叉率阈值
+
+        def calculate_energy(audio_data):
+            """计算短时能量"""
+            return np.sum(audio_data ** 2) / len(audio_data)
+
+        def calculate_zcr(audio_data):
+            """计算零交叉率"""
+            signs = np.sign(audio_data)
+            signs[signs == 0] = -1
+            return len(np.where(np.diff(signs))[0]) / len(audio_data)
 
         def callback(in_data, frame_count, time_info, status):
-            nonlocal silent_samples, audio_chunks, speech_detected
+            nonlocal silent_samples, audio_chunks, speech_detected, noise_energy_samples, energy_threshold
             if in_data:
                 audio_data = np.frombuffer(in_data, dtype=self.dtype)
                 if self.channels > 1:
-                    audio_data = audio_data.reshape(-1, self.channels)
+                    audio_data = audio_data.reshape(-1, self.channels)[:, 0]  # 使用第一个声道
                 audio_chunks.append(audio_data)
                 
-                # 计算音频绝对值的平均值
-                amplitude = np.abs(audio_data).mean()
-                print(amplitude)
+                # 计算短时能量和零交叉率
+                energy = calculate_energy(audio_data)
+                zcr = calculate_zcr(audio_data)
                 
+                # 初始阶段：收集背景噪声统计
+                if len(np.concatenate(audio_chunks)) < noise_duration_samples:
+                    noise_energy_samples.append(energy)
+                    return (None, pyaudio.paContinue)
+                
+                # 计算自适应阈值（仅在噪声收集完成后执行一次）
+                nonlocal energy_threshold
+                if noise_energy_samples and energy_threshold is None:
+                    # noise_mean = np.mean(noise_energy_samples)
+                    # noise_std = np.std(noise_energy_samples)
+                    # energy_threshold = noise_mean + 2 * noise_std if noise_std > 0 else noise_mean * 1.5  # 防止std为0
+                    energy_threshold = 0.3
+                    noise_energy_samples = []  # 清空
+                    print(f"Computed energy threshold: {energy_threshold:.6f}")
+                
+                # 如果阈值仍未设置，使用默认值
+                if energy_threshold is None:
+                    energy_threshold = 0.01  # 回退阈值
+                
+                print(f"能量: {energy:.6f}, 零交叉率: {zcr:.6f}, 语音检测: {speech_detected}, 沉默样本: {silent_samples}")
+
                 # 检测是否有有效语音
-                if amplitude >= silence_threshold:
+                if energy > energy_threshold and zcr > zcr_threshold:
                     speech_detected = True
                     silent_samples = 0
                 elif speech_detected:
