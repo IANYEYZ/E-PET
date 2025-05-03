@@ -3,3 +3,4 @@ __pycache__
 *.test.py
 .mypy_cache
 helpers/lib.py
+output.wav
