@@ -20,11 +20,16 @@ import sounddevice as sd # type: ignore
 from threading import Thread
 import pyaudio # type: ignore
 import numpy as np
+import alsaaudio # type: ignore
 
 class SPEAKER:
     def __init__(self):
         dev = next((d for d in sd.query_devices() if d['max_output_channels'] > 0 and 'usb' in d['name'].lower()), None)
         if dev: os.environ['ALSA_CARD'] = str(dev['index'])
+        # 设置音量
+        m = alsaaudio.Mixer('Master')
+        # 设置音量为最大 100%
+        m.setvolume(100)
         self.playing = False
 
     def play(self, file):
