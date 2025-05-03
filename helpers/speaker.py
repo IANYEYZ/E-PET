@@ -26,13 +26,13 @@ class SPEAKER:
     def __init__(self):
         dev = next((d for d in sd.query_devices() if d['max_output_channels'] > 0 and 'usb' in d['name'].lower()), None)
         if dev: os.environ['ALSA_CARD'] = str(dev['index'])
+        self.playing = False
+
+    def play(self, file):
         # 设置音量
         m = alsaaudio.Mixer('Master')
         # 设置音量为最大 100%
         m.setvolume(100)
-        self.playing = False
-
-    def play(self, file):
         p = pyaudio.PyAudio()
         stream = p.open(format=pyaudio.paInt16,
                             channels=1,
