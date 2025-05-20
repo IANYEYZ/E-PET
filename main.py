@@ -26,14 +26,14 @@ for j in range(gif.n_frames):
     disp.ShowImage(gif.convert('RGB'))
 mic = MIC()
 speaker = SPEAKER()
-dashscope.api_key = "sk-64b475070dbd4755a53ea2d0368c3ec2"
+dashscope.api_key = "YOUR_DASHSCOPE_API_KEY_HERE"
 
 class AI:
     def __init__(self):
         # 使用Qwen的API，这里假设使用OpenAI兼容的API格式
         self.client = OpenAI(
             base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",  # 通义千问的API地址
-            api_key="sk-64b475070dbd4755a53ea2d0368c3ec2"  # 替换为你的API key
+            api_key="YOUR_DASHSCOPE_API_KEY_HERE"  # 替换为你的API key
         )
         self.messages = []
     
@@ -81,7 +81,7 @@ class AIMULTI:
         # 使用Qwen的API，这里假设使用OpenAI兼容的API格式
         self.client = OpenAI(
             base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",  # 通义千问的API地址
-            api_key="sk-64b475070dbd4755a53ea2d0368c3ec2"  # 替换为你的API key
+            api_key="YOUR_DASHSCOPE_API_KEY_HERE"  # 替换为你的API key
         )
         self.messages = []
     
